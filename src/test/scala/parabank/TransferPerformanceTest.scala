@@ -78,6 +78,8 @@ class TransferPerformanceTest extends Simulation {
       )
   )
     .protocols(httpConf)
-    // SIN ASERCIONES - Solo reportar métricas para servicios externos inestables
-    // Las métricas se pueden revisar en el reporte HTML generado
+    .assertions(
+      global.requestsPerSec.gte(150),   // Al menos 150 transacciones por segundo
+      global.failedRequests.percent.is(0) // Sin transacciones perdidas ni fallos
+    )
 }

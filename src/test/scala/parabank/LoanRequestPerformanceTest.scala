@@ -92,6 +92,8 @@ class LoanRequestPerformanceTest extends Simulation {
       )
   )
     .protocols(httpConf)
-    // SIN ASERCIONES - Solo reportar métricas para servicios externos inestables
-    // Las métricas se pueden revisar en el reporte HTML generado
+    .assertions(
+      global.responseTime.mean.lte(5000),        // 150 usuarios concurrentes: promedio ≤ 5 segundos
+      global.successfulRequests.percent.gte(98)  // Tasa de éxito ≥ 98%
+    )
 }

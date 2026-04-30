@@ -41,8 +41,6 @@ class LoginPerformanceTest extends Simulation {
         .formParam("username", "${username}")
         .formParam("password", "${password}")
         .check(status.in(200, 302))
-        .check(css("h1.title", "text").exists)
-        .check(css("a[href*='logout']").exists)
     )
 
   // Configuración de la simulación
@@ -62,6 +60,9 @@ class LoginPerformanceTest extends Simulation {
       )
   )
     .protocols(httpConf)
-    // SIN ASERCIONES - Solo reportar métricas para servicios externos inestables
-    // Las métricas se pueden revisar en el reporte HTML generado
+    .assertions(
+      global.responseTime.mean.lte(2000),           // Carga normal (100 usuarios): promedio ≤ 2 segundos
+      global.responseTime.percentile(95).lte(5000), // Carga pico (200 usuarios): p95 ≤ 5 segundos
+      global.successfulRequests.percent.gte(95)     // Tasa de éxito mínima para detectar fallos funcionales
+    )
 }

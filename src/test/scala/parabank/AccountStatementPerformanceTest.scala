@@ -75,6 +75,8 @@ class AccountStatementPerformanceTest extends Simulation {
       )
   )
     .protocols(httpConf)
-    // SIN ASERCIONES - Solo reportar métricas para servicios externos inestables
-    // Las métricas se pueden revisar en el reporte HTML generado
+    .assertions(
+      global.responseTime.percentile(95).lte(3000), // 200 usuarios simultáneos: p95 ≤ 3 segundos
+      global.failedRequests.percent.lte(1)          // Tasa de error ≤ 1%
+    )
 }
