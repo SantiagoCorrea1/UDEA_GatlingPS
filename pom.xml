@@ -79,7 +79,6 @@
         <version>${gatling-maven-plugin.version}</version>
         <configuration>
           <runMultipleSimulations>false</runMultipleSimulations>
-          <simulationClass>parabank.LoginPerformanceTest</simulationClass>
         </configuration>
         <executions>
           <execution>
