@@ -30,36 +30,41 @@ class LoanRequestPerformanceTest extends Simulation {
     .maxConnectionsPerHost(20)
     .shareConnections
 
-  // Feeders CSV
-  val userFeeder = csv("data/users.csv").circular
+  // Feeder CSV — provee customerId, amount, downPayment
   val loanFeeder = csv("data/loans.csv").circular
 
   // Escenario de solicitud de préstamo
   val loanRequestScenario = scenario("Loan Request Performance Test")
-    .feed(userFeeder)
     .feed(loanFeeder)
     .exec(
-      // Paso 1: Login
+      // Paso 1: Login con credenciales válidas de ParaBank
       http("Login for Loan")
         .post("/login.htm")
-        .formParam("username", "${username}")
-        .formParam("password", "${password}")
+        .formParam("username", "john")
+        .formParam("password", "demo")
         .check(status.in(200, 302))
     )
     .pause(1)
     .exec(
-      // Paso 2: Navegar a solicitud de préstamo
+      // Paso 2: Obtener cuentas reales del cliente para usar un fromAccountId válido
+      http("Get Customer Accounts")
+        .get("/services_proxy/bank/customers/${customerId}/accounts")
+        .check(status.is(200))
+        .check(jsonPath("$[0].id").saveAs("realFromAccountId"))
+    )
+    .exec(
+      // Paso 3: Navegar a solicitud de préstamo
       http("Navigate to Loan Request")
         .get("/requestloan.htm")
         .check(status.in(200, 302))
     )
     .pause(1)
     .exec(
-      // Paso 3: Enviar solicitud de préstamo
+      // Paso 4: Enviar solicitud de préstamo con cuenta real
       http("Submit Loan Request")
         .post("/requestloan.htm")
         .formParam("customerId", "${customerId}")
-        .formParam("fromAccountId", "${fromAccountId}")
+        .formParam("fromAccountId", "${realFromAccountId}")
         .formParam("amount", "${amount}")
         .formParam("downPayment", "${downPayment}")
         .check(status.in(200, 302))
