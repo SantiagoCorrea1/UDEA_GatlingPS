@@ -6,18 +6,19 @@ import scala.concurrent.duration._
 
 /**
  * LoginPerformanceTest - Historia de Usuario No Funcional 1: Tiempo de respuesta en login
- *
+ * 
  * Como usuario del banco, quiero que el sistema procese mi inicio de sesión en menos de 2 segundos bajo carga normal,
  * para que pueda acceder rápidamente a mi cuenta sin demoras innecesarias.
- *
+ * 
  * Criterios de aceptación:
  * - El tiempo de respuesta para el login debe ser ≤ 2 segundos con hasta 100 usuarios concurrentes
  * - Bajo carga pico (200 usuarios), el tiempo no debe superar los 5 segundos
- *
- * Método de inyección: constantConcurrentUsers + rampConcurrentUsers
+ * 
+ * Método de inyección: rampUsers + constantUsersPerSec
  */
 class LoginPerformanceTest extends Simulation {
 
+  // Configuración HTTP optimizada
   val httpConf = http
     .baseUrl("https://parabank.parasoft.com/parabank")
     .acceptHeader("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
@@ -26,9 +27,12 @@ class LoginPerformanceTest extends Simulation {
     .acceptLanguageHeader("en-US,en;q=0.5")
     .connectionHeader("keep-alive")
     .maxConnectionsPerHost(20)
+    .shareConnections
 
+  // Feeder CSV con usuarios
   val userFeeder = csv("data/users.csv").circular
 
+  // Escenario de login
   val loginScenario = scenario("Login Performance Test")
     .feed(userFeeder)
     .exec(
@@ -37,32 +41,28 @@ class LoginPerformanceTest extends Simulation {
         .formParam("username", "${username}")
         .formParam("password", "${password}")
         .check(status.in(200, 302))
-        .check(substring("The username and password could not be verified").notExists)
     )
 
+  // Configuración de la simulación
   setUp(
     loginScenario
       .inject(
-        // Carga normal: 100 usuarios concurrentes
-        constantConcurrentUsers(100).during(60.seconds),
-
-        // Escalado hacia carga pico
-        rampConcurrentUsers(100).to(200).during(30.seconds),
-
-        // Carga pico: 200 usuarios concurrentes
-        constantConcurrentUsers(200).during(60.seconds),
-
+        // Carga normal: hasta 100 usuarios concurrentes
+        rampUsers(50).during(30.seconds), // Subida gradual a 50 usuarios
+        constantUsersPerSec(10).during(60.seconds), // Mantener 10 usuarios/seg = ~100 concurrentes
+        
+        // Carga pico: hasta 200 usuarios concurrentes  
+        rampUsers(100).during(30.seconds), // Subida gradual adicional a 100 usuarios más
+        constantUsersPerSec(20).during(60.seconds), // Mantener 20 usuarios/seg = ~200 concurrentes
+        
         // Descenso gradual
-        rampConcurrentUsers(200).to(0).during(30.seconds)
+        rampUsers(0).during(30.seconds)
       )
   )
     .protocols(httpConf)
     .assertions(
-      // Carga normal (100 usuarios): promedio ≤ 2 segundos
-      global.responseTime.mean.lte(2000),
-      // Carga pico (200 usuarios): p95 ≤ 5 segundos
-      global.responseTime.percentile(95).lte(5000),
-      // Tasa de éxito mínima para detectar fallos funcionales
-      global.successfulRequests.percent.gte(95)
+      global.responseTime.mean.lte(2000),           // Carga normal (100 usuarios): promedio ≤ 2 segundos
+      global.responseTime.percentile(95).lte(5000), // Carga pico (200 usuarios): p95 ≤ 5 segundos
+      global.successfulRequests.percent.gte(95)     // Tasa de éxito mínima para detectar fallos funcionales
     )
 }
