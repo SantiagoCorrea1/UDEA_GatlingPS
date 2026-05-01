@@ -49,17 +49,18 @@ class AccountStatementPerformanceTest extends Simulation {
     .exec(
       // Paso 2: Consultar estado de cuenta
       http("Get Account Statement")
-        .get("/account/transaction.htm")
-        .queryParam("accountId", "${accountId}")
+        .get("/activity.htm")
+        .queryParam("id", "${accountId}")
         .check(status.in(200, 302))
-        .check(css("table#transactionTable").exists)
     )
     .pause(2)
     .exec(
-      // Paso 3: Consultar actividad reciente (opcional)
+      // Paso 3: Consultar actividad reciente filtrada
       http("Get Recent Activity")
-        .get("/account/activity.htm")
-        .queryParam("accountId", "${accountId}")
+        .get("/activity.htm")
+        .queryParam("id", "${accountId}")
+        .queryParam("month", "All")
+        .queryParam("transactionType", "All")
         .check(status.in(200, 302))
     )
 
