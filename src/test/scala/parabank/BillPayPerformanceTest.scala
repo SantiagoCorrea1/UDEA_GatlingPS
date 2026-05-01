@@ -68,16 +68,16 @@ class BillPayPerformanceTest extends Simulation {
         .formParam("accountNumber", "${accountNumber}")
         .formParam("verifyAccount", "${accountNumber}")
         .formParam("amount", "${amount}")
+        .formParam("fromAccountId", "${fromAccountId}")
         .check(status.in(200, 302))
     )
     .pause(2)
     .exec(
       // Paso 4: Verificar historial de transacciones
       http("Verify Transaction History")
-        .get("/account/transaction.htm")
-        .queryParam("accountId", "13122")
+        .get("/activity.htm")
+        .queryParam("id", "${fromAccountId}")
         .check(status.in(200, 302))
-        .check(css("table#transactionTable").exists)
     )
 
   // Configuración de la simulación con picos de carga

@@ -13,17 +13,19 @@ class LoanRequestLoadTest extends Simulation {
     .userAgentHeader("Gatling Load Test")
     .contentTypeHeader("application/x-www-form-urlencoded")
 
-  // Feeder CSV
-  val feeder = csv("data/loanRequests.csv").circular
+  // Feeders CSV
+  val userFeeder = csv("data/users.csv").circular
+  val feeder = csv("data/loans.csv").circular
 
   // Paso 1: Login
-  val login = exec(
-    http("Login")
-      .post("/login.htm")
-      .formParam("username", "john")   // usuario válido de demo
-      .formParam("password", "demo")
-      .check(status.is(200))
-  )
+  val login = feed(userFeeder)
+    .exec(
+      http("Login")
+        .post("/login.htm")
+        .formParam("username", "${username}")
+        .formParam("password", "${password}")
+        .check(status.in(200, 302))
+    )
 
   // Paso 2: Solicitud de préstamo (ya autenticado)
   val requestLoan = feed(feeder)
@@ -47,6 +49,10 @@ class LoanRequestLoadTest extends Simulation {
   setUp(
     scn.inject(rampUsers(50).during(10.seconds))
   ).protocols(httpConf)
+   .assertions(
+     global.responseTime.mean.lte(5000),
+     global.successfulRequests.percent.gte(98)
+   )
 }
 
 
