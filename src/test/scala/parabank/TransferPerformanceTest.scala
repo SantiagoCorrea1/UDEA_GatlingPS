@@ -28,7 +28,6 @@ class TransferPerformanceTest extends Simulation {
     .acceptLanguageHeader("en-US,en;q=0.5")
     .connectionHeader("keep-alive")
     .maxConnectionsPerHost(30)
-    .shareConnections
 
   // Feeders CSV
   val userFeeder = csv("data/users.csv").circular
@@ -45,6 +44,7 @@ class TransferPerformanceTest extends Simulation {
         .formParam("username", "${username}")
         .formParam("password", "${password}")
         .check(status.in(200, 302))
+        .check(substring("The username and password could not be verified").notExists)
     )
     .pause(1)
     .exec(

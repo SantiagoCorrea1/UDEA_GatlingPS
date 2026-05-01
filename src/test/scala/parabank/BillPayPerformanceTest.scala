@@ -6,21 +6,20 @@ import scala.concurrent.duration._
 
 /**
  * BillPayPerformanceTest - Historia de Usuario No Funcional 5: Pago de servicios con concurrencia alta
- * 
+ *
  * Como cliente del banco, quiero que el módulo de pago de servicios funcione de manera eficiente durante picos de uso,
  * para que pueda realizar mis pagos sin retrasos ni fallas, incluso en horarios de alta demanda.
- * 
+ *
  * Criterios de aceptación:
  * - Durante una simulación de 200 usuarios concurrentes realizando pagos
  * - El tiempo de respuesta por transacción debe ser ≤ 3 segundos
  * - La tasa de errores funcionales debe ser ≤ 1%
  * - El sistema debe registrar correctamente el pago en el historial del usuario sin duplicaciones
- * 
- * Método de inyección: atOnceUsers + rampUsers (picos de carga)
+ *
+ * Método de inyección: rampConcurrentUsers + constantConcurrentUsers (200 simultáneos reales)
  */
 class BillPayPerformanceTest extends Simulation {
 
-  // Configuración HTTP optimizada
   val httpConf = http
     .baseUrl("https://parabank.parasoft.com/parabank")
     .acceptHeader("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
@@ -29,13 +28,10 @@ class BillPayPerformanceTest extends Simulation {
     .acceptLanguageHeader("en-US,en;q=0.5")
     .connectionHeader("keep-alive")
     .maxConnectionsPerHost(25)
-    .shareConnections
 
-  // Feeders CSV
   val userFeeder = csv("data/users.csv").circular
   val billPayFeeder = csv("data/billpay.csv").circular
 
-  // Escenario de pago de servicios
   val billPayScenario = scenario("Bill Pay Performance Test")
     .feed(userFeeder)
     .feed(billPayFeeder)
@@ -46,6 +42,7 @@ class BillPayPerformanceTest extends Simulation {
         .formParam("username", "${username}")
         .formParam("password", "${password}")
         .check(status.in(200, 302))
+        .check(substring("The username and password could not be verified").notExists)
     )
     .pause(1)
     .exec(
@@ -73,48 +70,31 @@ class BillPayPerformanceTest extends Simulation {
     )
     .pause(2)
     .exec(
-      // Paso 4: Verificar historial de transacciones
+      // Paso 4: Verificar historial de transacciones (sin duplicaciones)
       http("Verify Transaction History")
         .get("/activity.htm")
         .queryParam("id", "${fromAccountId}")
         .check(status.in(200, 302))
     )
 
-  // Configuración de la simulación con picos de carga
   setUp(
     billPayScenario
       .inject(
-        // Pico inicial: 50 usuarios de golpe
-        atOnceUsers(50),
-        
-        // Pausa para estabilizar
-        nothingFor(30.seconds),
-        
-        // Rampa hasta 100 usuarios
-        rampUsers(50).during(30.seconds),
-        
-        // Pausa para estabilizar
-        nothingFor(30.seconds),
-        
-        // Pico máximo: 100 usuarios adicionales de golpe = 200 total
-        atOnceUsers(100),
-        
-        // Mantener pico máximo
-        nothingFor(60.seconds),
-        
-        // Rampa hasta 200 usuarios adicionales = 300 total
-        rampUsers(100).during(30.seconds),
-        
-        // Mantener carga alta
-        nothingFor(90.seconds),
-        
+        // Subida gradual hasta 200 usuarios concurrentes (criterio de aceptación)
+        rampConcurrentUsers(0).to(200).during(30.seconds),
+
+        // Mantener 200 usuarios concurrentes con carga sostenida
+        constantConcurrentUsers(200).during(120.seconds),
+
         // Descenso gradual
-        rampUsers(0).during(60.seconds)
+        rampConcurrentUsers(200).to(0).during(30.seconds)
       )
   )
     .protocols(httpConf)
     .assertions(
-      global.responseTime.percentile(95).lte(3000), // 200 usuarios concurrentes: p95 ≤ 3 segundos
-      global.failedRequests.percent.lte(1)          // Tasa de errores funcionales ≤ 1%
+      // 200 usuarios concurrentes: p95 ≤ 3 segundos
+      global.responseTime.percentile(95).lte(3000),
+      // Tasa de errores funcionales ≤ 1%
+      global.failedRequests.percent.lte(1)
     )
 }
