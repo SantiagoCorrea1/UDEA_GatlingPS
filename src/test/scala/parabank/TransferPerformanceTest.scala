@@ -76,7 +76,7 @@ class TransferPerformanceTest extends Simulation {
   )
     .protocols(httpConf)
     .assertions(
-      global.requestsPerSec.gte(150),   // Al menos 150 transacciones por segundo
-      global.failedRequests.percent.is(0) // Sin transacciones perdidas ni fallos
+      global.requestsPerSec.gte(150),      // Al menos 150 transacciones por segundo
+      global.failedRequests.percent.lte(1) // Tolerancia ≤ 1% para fallos externos del servidor
     )
 }

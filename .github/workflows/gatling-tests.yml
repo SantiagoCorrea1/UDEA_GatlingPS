@@ -6,9 +6,23 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Prueba a ejecutar'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - login
+          - transfers
+          - statements
+          - loans
+          - billpay
 
 jobs:
   test-login:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.test_suite == 'all' || inputs.test_suite == 'login' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -41,6 +55,7 @@ jobs:
 
   test-transfers:
     needs: test-login
+    if: ${{ always() && (github.event_name != 'workflow_dispatch' || inputs.test_suite == 'all' || inputs.test_suite == 'transfers') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -73,6 +88,7 @@ jobs:
 
   test-statements:
     needs: test-transfers
+    if: ${{ always() && (github.event_name != 'workflow_dispatch' || inputs.test_suite == 'all' || inputs.test_suite == 'statements') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -105,6 +121,7 @@ jobs:
 
   test-loans:
     needs: test-statements
+    if: ${{ always() && (github.event_name != 'workflow_dispatch' || inputs.test_suite == 'all' || inputs.test_suite == 'loans') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -137,6 +154,7 @@ jobs:
 
   test-billpay:
     needs: test-loans
+    if: ${{ always() && (github.event_name != 'workflow_dispatch' || inputs.test_suite == 'all' || inputs.test_suite == 'billpay') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -179,11 +197,11 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Test | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Login Performance | ${{ needs.test-login.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Transfer Performance | ${{ needs.test-transfers.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Statement Performance | ${{ needs.test-statements.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Loan Performance | ${{ needs.test-loans.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Bill Pay Performance | ${{ needs.test-billpay.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Login Performance | ${{ needs.test-login.result == 'success' && '✅ Passed' || needs.test-login.result == 'skipped' && '⏭ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Transfer Performance | ${{ needs.test-transfers.result == 'success' && '✅ Passed' || needs.test-transfers.result == 'skipped' && '⏭ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Statement Performance | ${{ needs.test-statements.result == 'success' && '✅ Passed' || needs.test-statements.result == 'skipped' && '⏭ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Loan Performance | ${{ needs.test-loans.result == 'success' && '✅ Passed' || needs.test-loans.result == 'skipped' && '⏭ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Bill Pay Performance | ${{ needs.test-billpay.result == 'success' && '✅ Passed' || needs.test-billpay.result == 'skipped' && '⏭ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "📊 **Download detailed reports from the Artifacts section above**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
