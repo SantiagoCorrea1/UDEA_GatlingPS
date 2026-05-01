@@ -50,14 +50,14 @@ class LoanRequestPerformanceTest extends Simulation {
     .exec(
       // Paso 2: Navegar a solicitud de préstamo
       http("Navigate to Loan Request")
-        .get("/loan.htm")
+        .get("/requestloan.htm")
         .check(status.in(200, 302))
     )
     .pause(1)
     .exec(
       // Paso 3: Enviar solicitud de préstamo
       http("Submit Loan Request")
-        .post("/loan.htm")
+        .post("/requestloan.htm")
         .formParam("customerId", "${customerId}")
         .formParam("fromAccountId", "${fromAccountId}")
         .formParam("amount", "${amount}")
