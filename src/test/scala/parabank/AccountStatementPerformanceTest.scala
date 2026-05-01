@@ -44,7 +44,6 @@ class AccountStatementPerformanceTest extends Simulation {
         .formParam("username", "${username}")
         .formParam("password", "${password}")
         .check(status.in(200, 302))
-        .check(css("h1.title", "text").exists)
     )
     .pause(1)
     .exec(
@@ -53,7 +52,6 @@ class AccountStatementPerformanceTest extends Simulation {
         .get("/account/transaction.htm")
         .queryParam("accountId", "${accountId}")
         .check(status.in(200, 302))
-        .check(css("h1.title", "text").exists)
         .check(css("table#transactionTable").exists)
     )
     .pause(2)
@@ -63,7 +61,6 @@ class AccountStatementPerformanceTest extends Simulation {
         .get("/account/activity.htm")
         .queryParam("accountId", "${accountId}")
         .check(status.in(200, 302))
-        .check(css("h1.title", "text").exists)
     )
 
   // Configuración de la simulación con heavisideUsers

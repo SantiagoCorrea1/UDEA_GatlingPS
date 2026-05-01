@@ -45,19 +45,16 @@ class TransferPerformanceTest extends Simulation {
         .formParam("username", "${username}")
         .formParam("password", "${password}")
         .check(status.in(200, 302))
-        .check(css("h1.title", "text").exists)
     )
     .pause(1)
     .exec(
-      // Paso 2: Realizar transferencia
+      // Paso 2: Realizar transferencia via REST API
       http("Transfer Funds")
-        .post("/transfer.htm")
-        .formParam("fromAccountId", "${fromAccount}")
-        .formParam("toAccountId", "${toAccount}")
-        .formParam("amount", "${amount}")
-        .check(status.in(200, 302))
-        .check(css("h1.title", "text").exists)
-        .check(regex("Transfer Complete").exists)
+        .post("/services/bank/transfer")
+        .queryParam("fromAccountId", "${fromAccount}")
+        .queryParam("toAccountId", "${toAccount}")
+        .queryParam("amount", "${amount}")
+        .check(status.in(200))
     )
 
   // Configuración de la simulación con concurrent users

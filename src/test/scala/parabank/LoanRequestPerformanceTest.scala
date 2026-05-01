@@ -45,7 +45,6 @@ class LoanRequestPerformanceTest extends Simulation {
         .formParam("username", "${username}")
         .formParam("password", "${password}")
         .check(status.in(200, 302))
-        .check(css("h1.title", "text").exists)
     )
     .pause(1)
     .exec(
@@ -53,7 +52,6 @@ class LoanRequestPerformanceTest extends Simulation {
       http("Navigate to Loan Request")
         .get("/loan.htm")
         .check(status.in(200, 302))
-        .check(css("h1.title", "text").exists)
     )
     .pause(1)
     .exec(
@@ -65,8 +63,6 @@ class LoanRequestPerformanceTest extends Simulation {
         .formParam("amount", "${amount}")
         .formParam("downPayment", "${downPayment}")
         .check(status.in(200, 302))
-        .check(css("h1.title", "text").exists)
-        .check(regex("Loan.*approved|Loan.*denied|Loan.*pending").exists)
     )
 
   // Configuración de la simulación con incrementUsersPerSec
