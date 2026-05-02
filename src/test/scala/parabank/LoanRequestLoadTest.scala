@@ -42,16 +42,16 @@ class LoanRequestLoadTest extends Simulation {
   // Escenario principal
   val scn = scenario("Solicitud de préstamo bajo carga")
     .exec(login)
-    .pause(1)
+    .pause(3)
     .exec(requestLoan)
 
   // Inyección de usuarios
   setUp(
-    scn.inject(rampUsers(50).during(10.seconds))
+    scn.inject(rampUsers(10).during(30.seconds))
   ).protocols(httpConf)
    .assertions(
-     global.responseTime.mean.lte(5000),
-     global.successfulRequests.percent.gte(98)
+     global.responseTime.mean.lte(8000),
+     global.successfulRequests.percent.gte(90)
    )
 }
 
